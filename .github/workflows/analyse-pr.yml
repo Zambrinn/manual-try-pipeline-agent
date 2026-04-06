@@ -27,7 +27,7 @@ jobs:
       - name: Pull neural-chat Model
         run: |
           ollama pull neural-chat
-      - name: Analyze with Ollama
+      - name: Analyze with Model
         run: |
           python3 << 'EOF'
           import subprocess
@@ -95,19 +95,6 @@ jobs:
               
               exit(1)
           EOF
-                            
-                        except Exception as e:
-                            print(f"ERROR: {str(e)}")
-                            import traceback
-                            traceback.print_exc()
-                            
-                            # Cria arquivo de erro
-                            with open('analysis-result.md', 'w') as f:
-                                f.write('# Analysis Error\n\n')
-                                f.write(f'Error: {str(e)}\n')
-                            
-                            exit(1)
-                        EOF
       - name: Commit Analysis Results
         run: |
           # Verifica se o arquivo foi criado
