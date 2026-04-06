@@ -21,8 +21,7 @@ jobs:
       - name: Get PR Changes
         id: changes
         run: |
-          git fetch origin main:main
-          git diff main...HEAD > changes.diff
+          git diff origin/${{ github.base_ref }} HEAD > changes.diff
           
           echo "Diff size: $(wc -c < changes.diff) bytes"
           cat changes.diff
