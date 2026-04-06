@@ -24,9 +24,9 @@ jobs:
           git fetch origin
           git diff origin/${{ github.base_ref }}..HEAD > changes.diff
           cat changes.diff
-      - name: Pull Ollama Model
+      - name: Pull neural-chat Model
         run: |
-          ollama pull llama2
+          ollama pull neural-chat
       - name: Analyze with Ollama
         run: |
           python3 << 'EOF'
@@ -38,13 +38,18 @@ jobs:
               diff_content = f.read()
           
           # Cria o prompt
-          prompt = f"""Analise o seguinte código de PR e gere um resumo das mudanças:
-          
+          prompt = f"""Você é um analista de código especializado em revisão de Pull Requests.
+
+          IMPORTANTE: Analise APENAS o diff fornecido abaixo. Não invente informações ou arquivos que não aparecem no diff.
+
+          Se o diff estiver vazio ou muito pequeno, responda: "Diff muito pequeno ou vazio para análise significativa."
+
+          DIFF DO PR:
           {diff_content}
-          
-          Responda com:
+
+          Se houver conteúdo, responda com:
           1. Resumo do que foi mudado
-          2. Arquivos afetados
+          2. Arquivos afetados (BASEADO APENAS no diff)
           3. Possíveis impactos
           """
           
@@ -54,7 +59,7 @@ jobs:
               'http://localhost:11434/api/generate',
               '-H', 'Content-Type: application/json',
               '-d', json.dumps({
-                  'model': 'llama2',
+                  'model': 'neural-chat',
                   'prompt': prompt,
                   'stream': False
               })
