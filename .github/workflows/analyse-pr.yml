@@ -97,6 +97,12 @@ jobs:
               
               exit(1)
           EOF
+      - name: Debug - Check if file exists
+        run: |
+          echo "Verificando arquivos..."
+          ls -la analysis-result.md
+          pwd
+          ls -la
       - name: Commit Analysis Results
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
