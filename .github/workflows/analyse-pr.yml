@@ -1,0 +1,90 @@
+name: AI Agent TEST
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  analyze_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.ai/install.sh | sh
+          ollama serve &
+          sleep 10
+      - name: Get PR Changes
+        id: changes
+        run: |
+          git fetch origin
+          git diff origin/${{ github.base_ref }}..HEAD > changes.diff
+          cat changes.diff
+      - name: Pull Ollama Model
+        run: |
+          ollama pull llama2
+      - name: Analyze with Ollama
+        run: |
+          python3 << 'EOF'
+          import subprocess
+          import json
+          
+          # Le o PR
+          with open('changes.diff', 'r') as f:
+              diff_content = f.read()
+          
+          # Cria o prompt
+          prompt = f"""Analise o seguinte código de PR e gere um resumo das mudanças:
+          
+          {diff_content}
+          
+          Responda com:
+          1. Resumo do que foi mudado
+          2. Arquivos afetados
+          3. Possíveis impactos
+          """
+          
+          # Chama o ollama via API (localhost:11434)
+          curl_cmd = [
+              'curl', '-X', 'POST',
+              'http://localhost:11434/api/generate',
+              '-H', 'Content-Type: application/json',
+              '-d', json.dumps({
+                  'model': 'llama2',
+                  'prompt': prompt,
+                  'stream': False
+              })
+          ]
+          
+          result = subprocess.run(curl_cmd, capture_output=True, text=True)
+          response = json.loads(result.stdout)
+          
+          # Salva a resposta
+          with open('analysis-result.md', 'w') as f:
+              f.write('# PR Code Analysis\n\n')
+              f.write(response.get('response', 'No response'))
+          
+          print("Analysis done!")
+          EOF
+      - name: Commit Analysis Results
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add analysis-result.md
+          git commit -m "Update PR analysis results"
+          git push
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const analysisText = fs.readFileSync('analysis-result.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## AI Analysis Complete\n\n${analysisText}`
+            });
+
