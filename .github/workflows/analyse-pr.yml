@@ -33,12 +33,13 @@ jobs:
           import subprocess
           import json
           
-          # Le o PR
-          with open('changes.diff', 'r') as f:
-              diff_content = f.read()
-          
-          # Cria o prompt
-          prompt = f"""Você é um analista de código especializado em revisão de Pull Requests.
+          try:
+              with open('changes.diff', 'r') as f:
+                  diff_content = f.read()
+              
+              print(f"Diff lido: {len(diff_content)} bytes")
+              
+              prompt = f"""Você é um analista de código especializado em revisão de Pull Requests.
 
           IMPORTANTE: Analise APENAS o diff fornecido abaixo. Não invente informações ou arquivos que não aparecem no diff.
 
@@ -52,35 +53,67 @@ jobs:
           2. Arquivos afetados (BASEADO APENAS no diff)
           3. Possíveis impactos
           """
-          
-          # Chama o ollama via API (localhost:11434)
-          curl_cmd = [
-              'curl', '-X', 'POST',
-              'http://localhost:11434/api/generate',
-              '-H', 'Content-Type: application/json',
-              '-d', json.dumps({
-                  'model': 'neural-chat',
-                  'prompt': prompt,
-                  'stream': False
-              })
-          ]
-          
-          result = subprocess.run(curl_cmd, capture_output=True, text=True)
-          response = json.loads(result.stdout)
-          
-          # Salva a resposta
-          with open('analysis-result.md', 'w') as f:
-              f.write('# PR Code Analysis\n\n')
-              f.write(response.get('response', 'No response'))
-          
-          print("Analysis done!")
+              
+              print("Chamando modelo")
+              
+              curl_cmd = [
+                  'curl', '-X', 'POST',
+                  'http://localhost:11434/api/generate',
+                  '-H', 'Content-Type: application/json',
+                  '-d', json.dumps({
+                      'model': 'neural-chat',
+                      'prompt': prompt,
+                      'stream': False
+                  })
+              ]
+              
+              result = subprocess.run(curl_cmd, capture_output=True, text=True)
+              
+              print(f"Response code: {result.returncode}")
+              print(f"Response stdout: {result.stdout[:500]}")
+              print(f"Response stderr: {result.stderr[:500]}")
+              
+              response = json.loads(result.stdout)
+              analysis_text = response.get('response', 'Sem resposta do modelo')
+              
+              print(f"Analysis received: {len(analysis_text)} chars")
+              
+              with open('analysis-result.md', 'w') as f:
+                  f.write('# PR Code Analysis\n\n')
+                  f.write(analysis_text)
+              
+              print("File saved successfully!")
+              
+          except Exception as e:
+              print(f"ERROR: {str(e)}")
+              import traceback
+              traceback.print_exc()
+              
+              with open('analysis-result.md', 'w') as f:
+                  f.write('# Analysis Error\n\n')
+                  f.write(f'Error: {str(e)}\n')
+              
+              exit(1)
           EOF
+                            
+                        except Exception as e:
+                            print(f"ERROR: {str(e)}")
+                            import traceback
+                            traceback.print_exc()
+                            
+                            # Cria arquivo de erro
+                            with open('analysis-result.md', 'w') as f:
+                                f.write('# Analysis Error\n\n')
+                                f.write(f'Error: {str(e)}\n')
+                            
+                            exit(1)
+                        EOF
       - name: Commit Analysis Results
         run: |
           # Verifica se o arquivo foi criado
           if [ ! -f analysis-result.md ]; then
             echo "analysis-result.md não foi criado"
-            echo "Criando arquivo padrão"
+            echo "Criando arquivo padrão..."
             echo "# Analysis Failed" > analysis-result.md
             echo "A análise não conseguiu ser processada." >> analysis-result.md
           fi
