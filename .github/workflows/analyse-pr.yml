@@ -95,6 +95,13 @@ jobs:
               
               exit(1)
           EOF
+      - name: Commit Analysis Results
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Add AI analysis results"
+          file_pattern: "analysis-result.md"
+          commit_user_name: "GitHub Action"
+          commit_user_email: "action@github.com"
       - name: Comment on PR
         uses: actions/github-script@v7
         with:
