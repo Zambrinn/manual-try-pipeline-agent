@@ -45,15 +45,15 @@ jobs:
 
           IMPORTANTE: Analise APENAS o diff fornecido abaixo. Não invente informações ou arquivos que não aparecem no diff.
 
-          Se o diff estiver vazio ou muito pequeno, responda: "Diff muito pequeno ou vazio para análise significativa."
-
           DIFF DO PR:
           {diff_content}
 
-          Se houver conteúdo, responda com:
+          Responda SEMPRE com:
           1. Resumo do que foi mudado
           2. Arquivos afetados (BASEADO APENAS no diff)
           3. Possíveis impactos
+
+          Seja conciso e direto na análise.
           """
               
               print("Chamando modelo")
