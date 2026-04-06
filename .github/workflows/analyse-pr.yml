@@ -21,10 +21,10 @@ jobs:
       - name: Get PR Changes
         id: changes
         run: |
-          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" | \
-            jq -r '.[].patch' > changes.diff
+          git fetch origin main:main
+          git diff main...HEAD > changes.diff
           
+          echo "Diff size: $(wc -c < changes.diff) bytes"
           cat changes.diff
       - name: Pull neural-chat Model
         run: |
