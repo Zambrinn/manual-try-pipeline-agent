@@ -95,22 +95,6 @@ jobs:
               
               exit(1)
           EOF
-      - name: Commit Analysis Results
-        run: |
-          # Verifica se o arquivo foi criado
-          if [ ! -f analysis-result.md ]; then
-            echo "analysis-result.md não foi criado"
-            echo "Criando arquivo padrão..."
-            echo "# Analysis Failed" > analysis-result.md
-            echo "A análise não conseguiu ser processada." >> analysis-result.md
-          fi
-          
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add analysis-result.md
-          git commit -m "Update PR analysis results"
-          git pull --rebase origin ${{ github.head_ref }}
-          git push origin HEAD:${{ github.head_ref }}
       - name: Comment on PR
         uses: actions/github-script@v7
         with:
